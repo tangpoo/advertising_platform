@@ -7,15 +7,15 @@ import java.time.LocalDateTime
 @Entity
 class AdvertisingExposure private constructor(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private val id: Long?,
+    val id: Long?,
     @OneToOne(cascade = [CascadeType.ALL])
     @JoinColumn(name = "advertising_info_id")
-    private var advertisingInfo: AdvertisingInfo,
-    private val advertisingType: AdvertisingType,
-    private val charge: BigDecimal?,
-    private val startedAt: LocalDateTime,
-    private val endedAt: LocalDateTime,
-    private val paymentDate: LocalDateTime
+    var advertisingInfo: AdvertisingInfo,
+    val advertisingType: AdvertisingType,
+    val charge: BigDecimal?,
+    val startedAt: LocalDateTime,
+    val endedAt: LocalDateTime,
+    val paymentDate: LocalDateTime
 ) {
 
     override fun equals(other: Any?): Boolean {
