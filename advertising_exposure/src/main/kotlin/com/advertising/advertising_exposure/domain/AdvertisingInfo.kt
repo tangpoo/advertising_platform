@@ -11,14 +11,14 @@ import java.time.LocalDateTime
 @Entity
 class AdvertisingInfo private constructor(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private val id: Long?,
-    private val shopId: Long,
-    private val image: String?,
-    private val description: String,
+    val id: Long?,
+    val shopId: Long,
+    val image: String?,
+    val description: String,
     @CreationTimestamp
-    private val createAt: LocalDateTime,
-    private val region: String,
-    private val isAllowed: Boolean
+    val createAt: LocalDateTime,
+    val region: String,
+    val isAllowed: Boolean
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -31,15 +31,18 @@ class AdvertisingInfo private constructor(
 
     companion object {
         operator fun invoke(
-            advertisingInfoReq: AdvertisingInfoReq
+            shopId: Long,
+            image: String?,
+            description: String,
+            region: String,
         ) =
             AdvertisingInfo(
                 id = null,
-                shopId = advertisingInfoReq.shopId,
-                image = advertisingInfoReq.image,
-                description = advertisingInfoReq.description,
+                shopId = shopId,
+                image = image,
+                description = description,
                 createAt = LocalDateTime.now(),
-                region = advertisingInfoReq.region,
+                region = region,
                 isAllowed = false
             )
     }

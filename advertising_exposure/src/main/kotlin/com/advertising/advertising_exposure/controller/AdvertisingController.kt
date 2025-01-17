@@ -1,6 +1,7 @@
 package com.advertising.advertising_exposure.controller
 
 import com.advertising.advertising_exposure.controller.dto.AdvertisingInfoReq
+import com.advertising.advertising_exposure.controller.dto.AdvertisingInfoRes
 import com.advertising.advertising_exposure.domain.AdvertisingInfo
 import com.advertising.advertising_exposure.service.AdvertisingService
 import org.springframework.web.bind.annotation.PostMapping
@@ -13,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 class AdvertisingController(private val advertisingService: AdvertisingService) {
 
     @PostMapping
-    fun saveAdvertisingInfo(@RequestBody advertisingInfoReq: AdvertisingInfoReq): AdvertisingInfo {
+    fun saveAdvertisingInfo(@RequestBody advertisingInfoReq: AdvertisingInfoReq): AdvertisingInfoRes {
         return advertisingService.saveAdvertisingInfo(advertisingInfoReq)
     }
 }
