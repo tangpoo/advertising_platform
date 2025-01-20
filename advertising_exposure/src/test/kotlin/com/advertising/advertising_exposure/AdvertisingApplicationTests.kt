@@ -13,7 +13,7 @@ import org.testcontainers.utility.DockerImageName
 
 @Testcontainers
 @SpringBootTest
-class AdvertisingExposureApplicationTests {
+class AdvertisingApplicationTests {
     companion object {
         @Container
         val elasticsearchContainer = ElasticsearchContainer(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch:8.10.0"))

@@ -1,19 +1,53 @@
 package com.advertising.advertising_exposure.service
 
-import com.advertising.advertising_exposure.controller.dto.AdvertisingInfoReq
-import com.advertising.advertising_exposure.controller.dto.AdvertisingInfoRes
-import com.advertising.advertising_exposure.domain.AdvertisingInfo
+import com.advertising.advertising_exposure.controller.dto.AdvertisementReq
+import com.advertising.advertising_exposure.controller.dto.AdvertisementRes
+import com.advertising.advertising_exposure.domain.Advertisement
+import com.advertising.advertising_exposure.domain.AdvertisementDocument
+import com.advertising.advertising_exposure.repository.AdvertisementRepository
 import com.advertising.advertising_exposure.repository.AdvertisingExposureRepository
-import com.advertising.advertising_exposure.repository.AdvertisingInfoRepository
+import com.advertising.advertising_exposure.repository.search.AdvertisementQueryRepository
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.util.Streamable
 import org.springframework.stereotype.Service
 
 @Service
 class AdvertisingService(
-    private val advertisingInfoRepository: AdvertisingInfoRepository,
-    private val advertisingExposureRepository: AdvertisingExposureRepository
+    private val advertisementRepository: AdvertisementRepository,
+    private val advertisingExposureRepository: AdvertisingExposureRepository,
+    private val advertisingSearchRepository: AdvertisementQueryRepository,
 ) {
-    fun saveAdvertisingInfo(advertisingInfoReq: AdvertisingInfoReq): AdvertisingInfoRes {
-        val advertisingInfoEntity = advertisingInfoRepository.save(advertisingInfoReq.toEntity());
-        return AdvertisingInfoRes.fromEntity(advertisingInfoEntity)
+    fun saveAdvertisementInfo(advertisementReq: AdvertisementReq): AdvertisementRes {
+        val advertisingInfoEntity = advertisementRepository.save(advertisementReq.toEntity())
+        return AdvertisementRes.fromEntity(advertisingInfoEntity)
+    }
+
+    fun filterAndSortAdvertisementInfos(
+        minOrderPrice: Int?,
+        maxDeliveryFee: Int?,
+        sortBy: String,
+        page: Int,
+        size: Int
+    ): List<AdvertisementRes> {
+        val pageable = PageRequest.of(page, size)
+        return advertisingSearchRepository.filterAndSortAdvertisingInfos(
+            minOrderPrice,
+            maxDeliveryFee,
+            sortBy,
+            pageable
+        )
+            .toResponse()
+            .toList()
     }
 }
+
+fun Streamable<*>.toResponse(): Streamable<AdvertisementRes> {
+    return this.map {
+        when (it) {
+            is Advertisement -> AdvertisementRes.fromEntity(it)
+            is AdvertisementDocument -> AdvertisementRes.fromDocument(it)
+            else -> throw IllegalArgumentException("Unsupported type: ${it::class}")
+        }
+    }
+}
+

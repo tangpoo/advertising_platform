@@ -1,15 +1,15 @@
 package com.advertising.advertising_exposure.controller.dto
 
-import com.advertising.advertising_exposure.domain.AdvertisingInfo
+import com.advertising.advertising_exposure.domain.Advertisement
 
-data class AdvertisingInfoReq(
+data class AdvertisementReq(
     val shopId: Long,
     val image: String?,
     val description: String,
     val region: String
 ) {
     fun toEntity() =
-        AdvertisingInfo(
+        Advertisement(
             shopId,
             image,
             description,
