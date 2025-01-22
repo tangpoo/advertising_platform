@@ -16,7 +16,9 @@ import org.testcontainers.utility.DockerImageName
 class AdvertisingApplicationTests {
     companion object {
         @Container
-        val elasticsearchContainer = ElasticsearchContainer(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch:8.10.0"))
+        val elasticsearchContainer =
+            ElasticsearchContainer(DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch:8.10.0"))
+
         @Container
         val mysqlContainer = MySQLContainer(DockerImageName.parse("mysql:latest"))
 

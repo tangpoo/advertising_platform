@@ -5,23 +5,24 @@ import co.elastic.clients.json.jackson.JacksonJsonpMapper
 import co.elastic.clients.transport.rest_client.RestClientTransport
 import org.apache.http.HttpHost
 import org.elasticsearch.client.RestClient
-import org.elasticsearch.client.RestClientBuilder
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 @Configuration
-class ElasticSearchConfig (
+class ElasticSearchConfig(
     @Value("\${es.host}") val host: String,
     @Value("\${es.port}") val port: Int
 ) {
     @Bean
     fun elasticsearchClient(): ElasticsearchClient {
-        val builder = RestClient.builder(HttpHost(
-            host,
-            port,
-            "http"
-        ))
+        val builder = RestClient.builder(
+            HttpHost(
+                host,
+                port,
+                "http"
+            )
+        )
 
         val transport = RestClientTransport(
             builder.build(),

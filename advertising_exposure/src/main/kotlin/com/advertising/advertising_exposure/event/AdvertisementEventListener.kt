@@ -18,6 +18,7 @@ class AdvertisementEventListener(
                 val document = AdvertisementDocument.fromEntity(advertisement)
                 elasticsearchOperations.save(document)
             }
+
             EventType.DELETED -> {
                 elasticsearchOperations.delete(advertisement.id.toString())
             }
