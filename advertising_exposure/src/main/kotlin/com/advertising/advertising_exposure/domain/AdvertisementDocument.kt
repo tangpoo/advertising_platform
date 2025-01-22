@@ -1,49 +1,51 @@
 package com.advertising.advertising_exposure.domain
 
 import jakarta.persistence.Id
-import org.springframework.data.elasticsearch.annotations.DateFormat
 import org.springframework.data.elasticsearch.annotations.Document
 import org.springframework.data.elasticsearch.annotations.Field
 import org.springframework.data.elasticsearch.annotations.FieldType
+import org.springframework.data.elasticsearch.annotations.Mapping
 import java.time.LocalDateTime
-import java.time.OffsetDateTime
-import java.time.ZoneOffset
 
 @Document(indexName = "advertisements")
 class AdvertisementDocument(
-    @Id
-    val id: Long?,
+    @Id @Field(type = FieldType.Long)
+    val id: Long,
     @Field(type = FieldType.Long)
     val shopId: Long,
     @Field(type = FieldType.Text)
     val image: String?,
     @Field(type = FieldType.Text)
     val description: String,
-    @Field(type = FieldType.Date, format = [DateFormat.basic_date_time])
-    val createAt: OffsetDateTime,
+    @Field(type = FieldType.Date, format = [], pattern = ["yyyy-MM-dd'T'HH:mm:ss"])
+    val createdAt: LocalDateTime,
     @Field(type = FieldType.Text)
     val region: String,
     @Field(type = FieldType.Boolean)
-    val isAllowed: Boolean,
+    val isAllowed: Boolean,             // 광고 게시가 된 후에 인덱싱이 시작된다면 의미가 없어질 필드
     @Field(type = FieldType.Integer)
-    val minOrderPrice: Int = 0,
+    val minOrderPrice: Int?,
     @Field(type = FieldType.Integer)
-    val deliveryFee: Int = 0,
+    val deliveryFee: Int?,
     @Field(type = FieldType.Double)
-    val rating: Double = 0.0,
-    @Field(type = FieldType.Date, format = [DateFormat.basic_date_time])
-    val startedAt: OffsetDateTime = OffsetDateTime.now()
+    val rating: Double?,
+    @Field(type = FieldType.Date, format = [], pattern = ["yyyy-MM-dd'T'HH:mm:ss"])
+    val startedAt: LocalDateTime
 ) {
     companion object {
         fun fromEntity(advertisement: Advertisement) =
             AdvertisementDocument(
-                advertisement.id,
+                advertisement.id!!,
                 advertisement.shopId,
                 advertisement.image,
                 advertisement.description,
-                advertisement.createAt.atOffset(ZoneOffset.UTC),
+                advertisement.createdAt,
                 advertisement.region,
-                advertisement.isAllowed
+                advertisement.isAllowed,
+                advertisement.minOrderPrice,
+                advertisement.deliveryFee,
+                advertisement.rating,
+                LocalDateTime.now(), // 임시 설정 todo 인덱싱은 광고 게시가 시작됐을 때 이벤트 발행
             )
     }
 }

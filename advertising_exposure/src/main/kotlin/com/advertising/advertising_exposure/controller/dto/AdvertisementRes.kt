@@ -2,7 +2,6 @@ package com.advertising.advertising_exposure.controller.dto
 
 import com.advertising.advertising_exposure.domain.Advertisement
 import com.advertising.advertising_exposure.domain.AdvertisementDocument
-import org.springframework.data.util.Streamable
 import java.time.LocalDateTime
 
 data class AdvertisementRes(
@@ -10,7 +9,7 @@ data class AdvertisementRes(
     private val shopId: Long,
     private val image: String?,
     private val description: String,
-    private val createAt: LocalDateTime,
+    private val createdAt: LocalDateTime?,
     private val region: String,
     private val isAllowed: Boolean
 ) {
@@ -21,7 +20,7 @@ data class AdvertisementRes(
                 advertisement.shopId,
                 advertisement.image,
                 advertisement.description,
-                advertisement.createAt,
+                advertisement.createdAt,
                 advertisement.region,
                 advertisement.isAllowed
             )
@@ -32,7 +31,7 @@ data class AdvertisementRes(
                 advertisementDocument.shopId,
                 advertisementDocument.image,
                 advertisementDocument.description,
-                advertisementDocument.createAt.toLocalDateTime(),
+                advertisementDocument.createdAt,
                 advertisementDocument.region,
                 advertisementDocument.isAllowed
             )

@@ -15,7 +15,7 @@ class Advertisement private constructor(
     val image: String?,
     val description: String,
     @CreationTimestamp
-    val createAt: LocalDateTime,
+    val createdAt: LocalDateTime,
     val region: String,
     val isAllowed: Boolean,
     val minOrderPrice: Int?,
@@ -65,7 +65,7 @@ class Advertisement private constructor(
                 shopId = shopId,
                 image = image,
                 description = description,
-                createAt = LocalDateTime.now(),
+                createdAt = LocalDateTime.now(),
                 region = region,
                 isAllowed = false,
                 minOrderPrice = null,
