@@ -31,7 +31,7 @@ class Advertising private constructor(
         operator fun invoke(
             advertisement: Advertisement,
             advertisingType: AdvertisingType,
-            charge: BigDecimal,
+            charge: BigDecimal?,
             startedAt: LocalDateTime,
             paymentDate: LocalDateTime
         ) =

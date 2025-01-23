@@ -2,6 +2,8 @@ package com.advertising.advertising_exposure.controller
 
 import com.advertising.advertising_exposure.controller.dto.AdvertisementReq
 import com.advertising.advertising_exposure.controller.dto.AdvertisementRes
+import com.advertising.advertising_exposure.controller.dto.AdvertisingReq
+import com.advertising.advertising_exposure.controller.dto.AdvertisingRes
 import com.advertising.advertising_exposure.service.AdvertisingService
 import org.springframework.web.bind.annotation.*
 
@@ -29,5 +31,12 @@ class AdvertisingController(private val advertisingService: AdvertisingService) 
             page,
             size
         )
+    }
+
+    @PostMapping("/posting")
+    fun postAdvertisements(
+        @RequestBody advertisingReq: AdvertisingReq
+    ): AdvertisingRes {
+        return advertisingService.postAdvertisement(advertisingReq)
     }
 }
