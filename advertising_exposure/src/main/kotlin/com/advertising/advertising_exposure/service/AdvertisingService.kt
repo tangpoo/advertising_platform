@@ -2,6 +2,8 @@ package com.advertising.advertising_exposure.service
 
 import com.advertising.advertising_exposure.controller.dto.AdvertisementReq
 import com.advertising.advertising_exposure.controller.dto.AdvertisementRes
+import com.advertising.advertising_exposure.controller.dto.AdvertisingReq
+import com.advertising.advertising_exposure.controller.dto.AdvertisingRes
 import com.advertising.advertising_exposure.domain.Advertisement
 import com.advertising.advertising_exposure.domain.AdvertisementDocument
 import com.advertising.advertising_exposure.repository.AdvertisementRepository
@@ -38,6 +40,13 @@ class AdvertisingService(
         )
             .toResponse()
             .toList()
+    }
+
+    fun postAdvertisement(advertisingReq: AdvertisingReq): AdvertisingRes {
+        // todo AdvertisingType 확인 및 charge 검증
+        // todo Advertisements 인덱싱 및 광고비 산출 이벤트 발행
+        val advertisement = advertisementRepository.findById(advertisingReq.advertisementId).orElseThrow()
+        return AdvertisingRes.fromEntity(advertisingExposureRepository.save(advertisingReq.toEntity(advertisement)))
     }
 }
 
