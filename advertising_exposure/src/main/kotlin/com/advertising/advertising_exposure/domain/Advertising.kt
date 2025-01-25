@@ -32,8 +32,7 @@ class Advertising private constructor(
             advertisement: Advertisement,
             advertisingType: AdvertisingType,
             charge: BigDecimal?,
-            startedAt: LocalDateTime,
-            paymentDate: LocalDateTime
+            startedAt: LocalDateTime
         ) =
             Advertising(
                 id = null,
@@ -42,7 +41,7 @@ class Advertising private constructor(
                 charge = charge,
                 startedAt = startedAt,
                 endedAt = startedAt.plusMonths(1),
-                paymentDate = paymentDate
+                paymentDate = LocalDateTime.now()
             )
     }
 }
