@@ -8,8 +8,10 @@ import com.advertising.advertising_exposure.repository.AdvertisementRepository
 import com.advertising.advertising_exposure.repository.AdvertisingExposureRepository
 import com.advertising.advertising_exposure.repository.search.AdvertisementQueryRepositoryImpl
 import com.advertising.advertising_exposure.util.TestUtils
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
@@ -61,5 +63,16 @@ class AdvertisingServiceTests {
         // Assert
         assertEquals(advertisingReq.advertisingType, result.advertisingType)
         assertEquals(advertisingReq.charge?.toBigDecimal(), result.charge)
+    }
+
+    @Test
+    fun `should fail when charge is null for charge type advertising`() {
+        // Arrange
+        val advertisingReq =
+            AdvertisingReq(1L, AdvertisingType.CHARGE, null, LocalDateTime.now().plusDays(5))
+
+        // Act + Assert
+        val result = assertThrows<IllegalArgumentException> { advertisingService.postAdvertisement(advertisingReq) }
+        assertEquals("Charge can not be null for charge type advertising", result.message)
     }
 }
