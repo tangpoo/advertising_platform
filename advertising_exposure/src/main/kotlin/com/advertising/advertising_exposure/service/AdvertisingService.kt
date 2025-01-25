@@ -46,7 +46,11 @@ class AdvertisingService(
         // todo AdvertisingType 확인 및 charge 검증
         // todo Advertisements 인덱싱 및 광고비 산출 이벤트 발행
         val advertisement = advertisementRepository.findById(advertisingReq.advertisementId).orElseThrow()
-        return AdvertisingRes.fromEntity(advertisingExposureRepository.save(advertisingReq.toEntity(advertisement)))
+        return AdvertisingRes.fromEntity(
+            advertisingExposureRepository.save(
+                advertisingReq.toEntity(advertisement)
+            )
+        )
     }
 }
 

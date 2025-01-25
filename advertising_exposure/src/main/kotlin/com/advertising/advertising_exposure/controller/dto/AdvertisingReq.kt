@@ -16,7 +16,6 @@ data class AdvertisingReq(
             advertisement,
             advertisingType,
             charge?.toBigDecimal(),
-            startAt,
-            LocalDateTime.now()
+            startAt
         )
 }

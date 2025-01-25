@@ -9,4 +9,6 @@ dependencies {
 
     testImplementation("org.testcontainers:mysql")
     testImplementation("org.testcontainers:elasticsearch")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.0.0")
+
 }
