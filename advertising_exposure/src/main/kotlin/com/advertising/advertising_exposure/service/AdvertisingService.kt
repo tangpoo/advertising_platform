@@ -6,6 +6,7 @@ import com.advertising.advertising_exposure.controller.dto.AdvertisingReq
 import com.advertising.advertising_exposure.controller.dto.AdvertisingRes
 import com.advertising.advertising_exposure.domain.Advertisement
 import com.advertising.advertising_exposure.domain.AdvertisementDocument
+import com.advertising.advertising_exposure.domain.AdvertisingType
 import com.advertising.advertising_exposure.repository.AdvertisementRepository
 import com.advertising.advertising_exposure.repository.AdvertisingExposureRepository
 import com.advertising.advertising_exposure.repository.search.AdvertisementQueryRepository
@@ -31,6 +32,7 @@ class AdvertisingService(
         page: Int,
         size: Int
     ): List<AdvertisementRes> {
+        // todo 수수료형 charge 차감 이벤트 발행
         val pageable = PageRequest.of(page, size)
         return advertisingSearchRepository.filterAndSortAdvertisingInfos(
             minOrderPrice,
@@ -43,7 +45,8 @@ class AdvertisingService(
     }
 
     fun postAdvertisement(advertisingReq: AdvertisingReq): AdvertisingRes {
-        // todo AdvertisingType 확인 및 charge 검증
+        validateAdvertising(advertisingReq)
+
         // todo Advertisements 인덱싱 및 광고비 산출 이벤트 발행
         val advertisement = advertisementRepository.findById(advertisingReq.advertisementId).orElseThrow()
         return AdvertisingRes.fromEntity(
@@ -51,6 +54,24 @@ class AdvertisingService(
                 advertisingReq.toEntity(advertisement)
             )
         )
+    }
+
+    private fun validateAdvertising(advertisingReq: AdvertisingReq) {
+        when (advertisingReq.advertisingType) {
+            AdvertisingType.FLAT_RATE -> {
+                if (advertisingReq.charge != null) {
+                    throw IllegalArgumentException("Charge must be null flat rate type advertising")
+                }
+            }
+
+            AdvertisingType.CHARGE -> {
+                val charge = advertisingReq.charge
+                    ?: throw IllegalArgumentException("Charge can not be null for charge type advertising")
+                if (charge < 500) {
+                    throw IllegalArgumentException("Charge must be greater than 500 for charge type advertising")
+                }
+            }
+        }
     }
 }
 
