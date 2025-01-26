@@ -5,7 +5,7 @@ import com.advertising.advertising_exposure.domain.AdvertisementDocument
 import java.time.LocalDateTime
 
 data class AdvertisementRes(
-    private val id: Long,
+    val id: Long,
     private val shopId: Long,
     private val image: String?,
     private val description: String,
