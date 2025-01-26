@@ -6,6 +6,7 @@ import com.advertising.advertising_exposure.controller.dto.AdvertisingReq
 import com.advertising.advertising_exposure.controller.dto.AdvertisingRes
 import com.advertising.advertising_exposure.domain.Advertisement
 import com.advertising.advertising_exposure.domain.AdvertisementDocument
+import com.advertising.advertising_exposure.domain.Advertising
 import com.advertising.advertising_exposure.domain.AdvertisingType
 import com.advertising.advertising_exposure.repository.AdvertisementRepository
 import com.advertising.advertising_exposure.repository.AdvertisingExposureRepository
@@ -13,6 +14,8 @@ import com.advertising.advertising_exposure.repository.search.AdvertisementQuery
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.util.Streamable
 import org.springframework.stereotype.Service
+import java.math.BigDecimal
+import java.math.BigInteger
 
 @Service
 class AdvertisingService(
@@ -34,14 +37,33 @@ class AdvertisingService(
     ): List<AdvertisementRes> {
         // todo 수수료형 charge 차감 이벤트 발행
         val pageable = PageRequest.of(page, size)
-        return advertisingSearchRepository.filterAndSortAdvertisingInfos(
+        val advertisements = advertisingSearchRepository.filterAndSortAdvertisingInfos(
             minOrderPrice,
             maxDeliveryFee,
             sortBy,
             pageable
         )
-            .toResponse()
-            .toList()
+
+        val advertisingList =
+            advertisements.map { it.id }.filterChargeTypeAdvertising()
+
+        advertisingList.deductChargeForChargeType()
+
+        return advertisements.toResponse().toList()
+    }
+
+    private fun List<Advertising>.deductChargeForChargeType() {
+        this.forEach { advertising ->
+            advertising.charge = (advertising.charge ?: BigDecimal(BigInteger.ZERO)) - BigDecimal(500)
+        }
+        advertisingExposureRepository.saveAll(this)
+    }
+
+    private fun Streamable<Long>.filterChargeTypeAdvertising(): List<Advertising> {
+        val ids = this.toList()
+
+        if (ids.isEmpty()) return emptyList()
+        return advertisingExposureRepository.findByAdvertisementIdInAndAdvertisingType(ids, AdvertisingType.CHARGE)
     }
 
     fun postAdvertisement(advertisingReq: AdvertisingReq): AdvertisingRes {
@@ -55,33 +77,32 @@ class AdvertisingService(
             )
         )
     }
+}
 
-    private fun validateAdvertising(advertisingReq: AdvertisingReq) {
-        when (advertisingReq.advertisingType) {
-            AdvertisingType.FLAT_RATE -> {
-                if (advertisingReq.charge != null) {
-                    throw IllegalArgumentException("Charge must be null flat rate type advertising")
-                }
+
+private fun validateAdvertising(advertisingReq: AdvertisingReq) {
+    when (advertisingReq.advertisingType) {
+        AdvertisingType.FLAT_RATE -> {
+            if (advertisingReq.charge != null) {
+                throw IllegalArgumentException("Charge must be null flat rate type advertising")
             }
+        }
 
-            AdvertisingType.CHARGE -> {
-                val charge = advertisingReq.charge
-                    ?: throw IllegalArgumentException("Charge can not be null for charge type advertising")
-                if (charge < 500) {
-                    throw IllegalArgumentException("Charge must be greater than 500 for charge type advertising")
-                }
+        AdvertisingType.CHARGE -> {
+            val charge = advertisingReq.charge
+                ?: throw IllegalArgumentException("Charge can not be null for charge type advertising")
+            if (charge < 500) {
+                throw IllegalArgumentException("Charge must be greater than 500 for charge type advertising")
             }
         }
     }
 }
 
-fun Streamable<*>.toResponse(): Streamable<AdvertisementRes> {
-    return this.map {
-        when (it) {
-            is Advertisement -> AdvertisementRes.fromEntity(it)
-            is AdvertisementDocument -> AdvertisementRes.fromDocument(it)
-            else -> throw IllegalArgumentException("Unsupported type: ${it::class}")
-        }
+private fun Streamable<*>.toResponse(): Streamable<AdvertisementRes> = this.map {
+    when (it) {
+        is Advertisement -> AdvertisementRes.fromEntity(it)
+        is AdvertisementDocument -> AdvertisementRes.fromDocument(it)
+        else -> throw IllegalArgumentException("Unsupported type: ${it::class}")
     }
 }
 

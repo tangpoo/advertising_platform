@@ -12,7 +12,7 @@ class Advertising private constructor(
     @JoinColumn(name = "advertising_info_id")
     var advertisement: Advertisement,
     val advertisingType: AdvertisingType,
-    val charge: BigDecimal?,
+    var charge: BigDecimal?,
     val startedAt: LocalDateTime,
     val endedAt: LocalDateTime,
     val paymentDate: LocalDateTime
