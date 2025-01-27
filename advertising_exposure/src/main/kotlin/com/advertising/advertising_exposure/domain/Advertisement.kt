@@ -53,6 +53,22 @@ class Advertisement private constructor(
 
     override fun hashCode(): Int = id.hashCode()
 
+    fun withUpdatedIsAllowed(isAllowed: Boolean): Advertisement {
+        return Advertisement(
+            id = this.id,
+            shopId = this.shopId,
+            image = this.image,
+            description = this.description,
+            createdAt = this.createdAt,
+            region = this.region,
+            isAllowed = isAllowed,
+            minOrderPrice = this.minOrderPrice,
+            deliveryFee = this.deliveryFee,
+            rating = this.rating,
+            startedAt = this.startedAt
+        )
+    }
+
     companion object {
         operator fun invoke(
             shopId: Long,

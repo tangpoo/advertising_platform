@@ -6,12 +6,12 @@ import java.time.LocalDateTime
 
 data class AdvertisementRes(
     val id: Long,
-    private val shopId: Long,
-    private val image: String?,
-    private val description: String,
-    private val createdAt: LocalDateTime?,
-    private val region: String,
-    private val isAllowed: Boolean
+    val shopId: Long,
+    val image: String?,
+    val description: String,
+    val createdAt: LocalDateTime?,
+    val region: String,
+    val isAllowed: Boolean
 ) {
     companion object {
         fun fromEntity(advertisement: Advertisement) =

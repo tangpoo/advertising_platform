@@ -15,7 +15,6 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.util.Streamable
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
-import java.math.BigInteger
 
 @Service
 class AdvertisingService(
@@ -35,7 +34,8 @@ class AdvertisingService(
         page: Int,
         size: Int
     ): List<AdvertisementRes> {
-        // todo 수수료형 charge 차감 이벤트 발행
+        // todo 클라이언트 관심사 외 이벤트로 분리
+        // todo 조회 후에 수수료 부족한 엔티티도 deactivate
         val pageable = PageRequest.of(page, size)
         val advertisements = advertisingSearchRepository.filterAndSortAdvertisingInfos(
             minOrderPrice,
@@ -44,38 +44,54 @@ class AdvertisingService(
             pageable
         )
 
-        val advertisingList =
-            advertisements.map { it.id }.filterChargeTypeAdvertising()
-
-        advertisingList.deductChargeForChargeType()
+        advertisements.map { it.id }
+            .filterChargeTypeAdvertising()
+            .deductChargeForChargeType()
 
         return advertisements.toResponse().toList()
-    }
-
-    private fun List<Advertising>.deductChargeForChargeType() {
-        this.forEach { advertising ->
-            advertising.charge = (advertising.charge ?: BigDecimal(BigInteger.ZERO)) - BigDecimal(500)
-        }
-        advertisingExposureRepository.saveAll(this)
-    }
-
-    private fun Streamable<Long>.filterChargeTypeAdvertising(): List<Advertising> {
-        val ids = this.toList()
-
-        if (ids.isEmpty()) return emptyList()
-        return advertisingExposureRepository.findByAdvertisementIdInAndAdvertisingType(ids, AdvertisingType.CHARGE)
     }
 
     fun postAdvertisement(advertisingReq: AdvertisingReq): AdvertisingRes {
         validateAdvertising(advertisingReq)
 
         // todo Advertisements 인덱싱 및 광고비 산출 이벤트 발행
-        val advertisement = advertisementRepository.findById(advertisingReq.advertisementId).orElseThrow()
+        val advertisement =
+            advertisementRepository.findById(advertisingReq.advertisementId).orElseThrow()
         return AdvertisingRes.fromEntity(
             advertisingExposureRepository.save(
                 advertisingReq.toEntity(advertisement)
             )
         )
+    }
+
+    private fun Streamable<Long>.filterChargeTypeAdvertising(): List<Advertising> {
+        val ids = this.toList()
+
+        if (ids.isEmpty()) return emptyList()
+        return advertisingExposureRepository.findByAdvertisementIdInAndAdvertisingType(
+            ids,
+            AdvertisingType.CHARGE
+        )
+    }
+
+    private fun List<Advertising>.deductChargeForChargeType() {
+        this.forEach { advertising ->
+            if (advertising.charge == null) {
+                deactivateAdvertising(advertising)
+            } else if (advertising.charge!! < BigDecimal(1000)) {
+                deactivateAdvertising(advertising)
+            } else {
+                advertising.charge = advertising.charge!! - BigDecimal(500)
+            }
+        }
+        advertisingExposureRepository.saveAll(this)
+    }
+
+    private fun deactivateAdvertising(advertising: Advertising) {
+        val advertisement = advertising.advertisement
+        val updatedAdvertisement = advertisement.withUpdatedIsAllowed(false)
+        advertisementRepository.save(updatedAdvertisement)
+        advertisingExposureRepository.delete(advertising)
     }
 }
 
