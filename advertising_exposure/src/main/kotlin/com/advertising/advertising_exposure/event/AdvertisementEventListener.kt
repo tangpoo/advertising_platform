@@ -20,7 +20,7 @@ class AdvertisementEventListener(
             }
 
             EventType.DELETED -> {
-                elasticsearchOperations.delete(advertisement.id.toString())
+                elasticsearchOperations.delete(advertisement.id.toString(), AdvertisementDocument::class.java)
             }
         }
 

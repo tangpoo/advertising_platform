@@ -23,26 +23,6 @@ class Advertisement private constructor(
     val rating: Double?,
     val startedAt: LocalDateTime?
 ) {
-    @PostPersist
-    fun postPersist() {
-        ApplicationContextProvider.publishEvent(
-            AdvertisementEvent(this, EventType.CREATED)
-        )
-    }
-
-    @PostUpdate
-    fun postUpdate() {
-        ApplicationContextProvider.publishEvent(
-            AdvertisementEvent(this, EventType.UPDATED)
-        )
-    }
-
-    @PostRemove
-    fun postRemove() {
-        ApplicationContextProvider.publishEvent(
-            AdvertisementEvent(this, EventType.DELETED)
-        )
-    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

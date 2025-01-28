@@ -6,6 +6,8 @@ import com.advertising.advertising_exposure.domain.Advertisement
 import com.advertising.advertising_exposure.domain.AdvertisementDocument
 import com.advertising.advertising_exposure.domain.Advertising
 import com.advertising.advertising_exposure.domain.AdvertisingType
+import com.advertising.advertising_exposure.event.AdvertisementEvent
+import com.advertising.advertising_exposure.event.EventType
 import com.advertising.advertising_exposure.repository.AdvertisementRepository
 import com.advertising.advertising_exposure.repository.AdvertisingExposureRepository
 import com.advertising.advertising_exposure.repository.search.AdvertisementQueryRepository
@@ -24,6 +26,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.times
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.util.Streamable
 import java.math.BigDecimal
@@ -44,6 +47,9 @@ class AdvertisingServiceTests {
     @Mock
     private lateinit var advertisementSearchRepository: AdvertisementQueryRepository
 
+    @Mock
+    private lateinit var eventPublisher: ApplicationEventPublisher
+
 
     @Nested
     inner class PostAdvertisement {
@@ -53,6 +59,8 @@ class AdvertisingServiceTests {
             val advertisingReq =
                 AdvertisingReq(1L, AdvertisingType.CHARGE, 100000L, LocalDateTime.now().plusDays(5))
             val advertisement = createAdvertisement()
+
+            TestUtils.setId(advertisement, "id", 1L)
 
             val advertising = createAdvertising(
                 advertisement,
@@ -75,6 +83,12 @@ class AdvertisingServiceTests {
             // Assert
             assertEquals(advertisingReq.advertisingType, result.advertisingType)
             assertEquals(advertisingReq.charge?.toBigDecimal(), result.charge)
+            verify(eventPublisher, times(1)).publishEvent(
+                AdvertisementEvent(
+                    advertisement,
+                    EventType.CREATED
+                )
+            )
         }
 
         @Test
@@ -110,7 +124,7 @@ class AdvertisingServiceTests {
                 null,
                 LocalDateTime.now()
             )
-            val advertisingList = listOf(advertising)
+            val deActivateAdvertisingList = listOf(advertising)
             val advertisement = advertising.advertisement
             val updateAdvertisement = advertisement.withUpdatedIsAllowed(false)
 
@@ -128,15 +142,11 @@ class AdvertisingServiceTests {
                     any(),
                     eq(AdvertisingType.CHARGE)
                 )
-            ).thenReturn(advertisingList)
+            ).thenReturn(deActivateAdvertisingList)
 
             `when`(
                 advertisementRepository.save(updateAdvertisement)
             ).thenReturn(updateAdvertisement)
-
-            `when`(
-                advertisingExposureRepository.saveAll(advertisingList)
-            ).thenReturn(advertisingList)
 
             // Act
             advertisingService.filterAndSortAdvertisementInfos(
@@ -151,6 +161,7 @@ class AdvertisingServiceTests {
             assertEquals(false, updateAdvertisement.isAllowed)
             verify(advertisementRepository, times(1)).save(updateAdvertisement)
             verify(advertisingExposureRepository, times(1)).delete(advertising)
+            verify(eventPublisher, times(1)).publishEvent(AdvertisementEvent(advertisement, EventType.DELETED))
 
         }
 
@@ -171,7 +182,8 @@ class AdvertisingServiceTests {
                 BigDecimal(999),
                 LocalDateTime.now()
             )
-            val advertisingList = listOf(advertising)
+            val deActivateAdvertisingList = listOf(advertising)
+
             val advertisement = advertising.advertisement
             val updateAdvertisement = advertisement.withUpdatedIsAllowed(false)
 
@@ -189,15 +201,11 @@ class AdvertisingServiceTests {
                     any(),
                     eq(AdvertisingType.CHARGE)
                 )
-            ).thenReturn(advertisingList)
+            ).thenReturn(deActivateAdvertisingList)
 
             `when`(
                 advertisementRepository.save(updateAdvertisement)
             ).thenReturn(updateAdvertisement)
-
-            `when`(
-                advertisingExposureRepository.saveAll(advertisingList)
-            ).thenReturn(advertisingList)
 
             // Act
             advertisingService.filterAndSortAdvertisementInfos(
@@ -213,6 +221,7 @@ class AdvertisingServiceTests {
             assertEquals(false, updateAdvertisement.isAllowed)
             verify(advertisementRepository, times(1)).save(updateAdvertisement)
             verify(advertisingExposureRepository, times(1)).delete(advertising)
+            verify(eventPublisher, times(1)).publishEvent(AdvertisementEvent(advertisement, EventType.DELETED))
         }
 
         @Test
@@ -227,6 +236,11 @@ class AdvertisingServiceTests {
 
             val advertisementDocumentList = createAdvertisementDocumentStreamable()
             val advertisingList = createAdvertisingList()
+            val filteredAdvertisingList =
+                advertisingList
+                    .filter { it.advertisingType == AdvertisingType.CHARGE }
+                    .filter { it.charge != null }
+                    .filter { it.charge!! < BigDecimal(1000) }
 
             `when`(
                 advertisementSearchRepository.filterAndSortAdvertisingInfos(
@@ -243,8 +257,8 @@ class AdvertisingServiceTests {
                 )
             ).thenReturn(advertisingList)
             `when`(
-                advertisingExposureRepository.saveAll(advertisingList)
-            ).thenReturn(advertisingList)
+                advertisingExposureRepository.saveAll(filteredAdvertisingList)
+            ).thenReturn(filteredAdvertisingList)
 
             // Act
             val result = advertisingService.filterAndSortAdvertisementInfos(
@@ -259,6 +273,7 @@ class AdvertisingServiceTests {
             assertEquals(result.size, 3)
             assertEquals(result.get(0).region, "seoul")
             assertEquals(result.get(1).region, "busan")
+            verify(eventPublisher, times(0)).publishEvent(any())
         }
 
         @Test
@@ -347,7 +362,7 @@ class AdvertisingServiceTests {
 private fun createAdvertisement() = Advertisement(1L, null, "description", "seoul")
 
 private fun createAdvertisementDocument() = AdvertisementDocument(
-    1L,
+    "1",
     1L,
     "image",
     "description",
@@ -362,7 +377,7 @@ private fun createAdvertisementDocument() = AdvertisementDocument(
 
 private fun createAdvertisementDocumentList() = listOf(
     AdvertisementDocument(
-        1L,
+        "1",
         1L,
         "image1",
         "description1",
@@ -375,7 +390,7 @@ private fun createAdvertisementDocumentList() = listOf(
         LocalDateTime.now().plusDays(5)
     ),
     AdvertisementDocument(
-        2L,
+        "2",
         2L,
         "image2",
         "description2",
@@ -388,7 +403,7 @@ private fun createAdvertisementDocumentList() = listOf(
         LocalDateTime.now().plusDays(5)
     ),
     AdvertisementDocument(
-        3L,
+        "3",
         3L,
         "image3",
         "description3",
@@ -404,7 +419,7 @@ private fun createAdvertisementDocumentList() = listOf(
 
 private fun createAdvertisementDocumentStreamable() = Streamable.of(
     AdvertisementDocument(
-        1L,
+        "1",
         1L,
         "image1",
         "description1",
@@ -417,7 +432,7 @@ private fun createAdvertisementDocumentStreamable() = Streamable.of(
         LocalDateTime.now().plusDays(5)
     ),
     AdvertisementDocument(
-        2L,
+        "2",
         2L,
         "image2",
         "description2",
@@ -430,7 +445,7 @@ private fun createAdvertisementDocumentStreamable() = Streamable.of(
         LocalDateTime.now().plusDays(5)
     ),
     AdvertisementDocument(
-        3L,
+        "3",
         3L,
         "image3",
         "description3",
