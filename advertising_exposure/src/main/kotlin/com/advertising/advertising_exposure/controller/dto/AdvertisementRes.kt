@@ -27,7 +27,7 @@ data class AdvertisementRes(
 
         fun fromDocument(advertisementDocument: AdvertisementDocument) =
             AdvertisementRes(
-                advertisementDocument.id,
+                advertisementDocument.id.toLong(),
                 advertisementDocument.shopId,
                 advertisementDocument.image,
                 advertisementDocument.description,

@@ -9,7 +9,7 @@ import java.time.LocalDateTime
 @Document(indexName = "advertisements")
 class AdvertisementDocument(
     @Id @Field(type = FieldType.Long)
-    val id: Long,
+    val id: String,
     @Field(type = FieldType.Long)
     val shopId: Long,
     @Field(type = FieldType.Text)
@@ -34,7 +34,7 @@ class AdvertisementDocument(
     companion object {
         fun fromEntity(advertisement: Advertisement) =
             AdvertisementDocument(
-                advertisement.id!!,
+                advertisement.id!!.toString(),
                 advertisement.shopId,
                 advertisement.image,
                 advertisement.description,

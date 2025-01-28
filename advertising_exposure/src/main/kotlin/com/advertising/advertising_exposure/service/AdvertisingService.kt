@@ -8,19 +8,25 @@ import com.advertising.advertising_exposure.domain.Advertisement
 import com.advertising.advertising_exposure.domain.AdvertisementDocument
 import com.advertising.advertising_exposure.domain.Advertising
 import com.advertising.advertising_exposure.domain.AdvertisingType
+import com.advertising.advertising_exposure.event.AdvertisementEvent
+import com.advertising.advertising_exposure.event.EventType
 import com.advertising.advertising_exposure.repository.AdvertisementRepository
 import com.advertising.advertising_exposure.repository.AdvertisingExposureRepository
 import com.advertising.advertising_exposure.repository.search.AdvertisementQueryRepository
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.util.Streamable
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 
 @Service
+@Transactional
 class AdvertisingService(
     private val advertisementRepository: AdvertisementRepository,
     private val advertisingExposureRepository: AdvertisingExposureRepository,
     private val advertisingSearchRepository: AdvertisementQueryRepository,
+    private val eventPublisher: ApplicationEventPublisher
 ) {
     fun saveAdvertisementInfo(advertisementReq: AdvertisementReq): AdvertisementRes {
         val advertisingInfoEntity = advertisementRepository.save(advertisementReq.toEntity())
@@ -45,18 +51,26 @@ class AdvertisingService(
         )
 
         advertisements.map { it.id }
+            .parseLong()
             .filterChargeTypeAdvertising()
             .deductChargeForChargeType()
 
         return advertisements.toResponse().toList()
     }
-
     fun postAdvertisement(advertisingReq: AdvertisingReq): AdvertisingRes {
         validateAdvertising(advertisingReq)
 
         // todo Advertisements 인덱싱 및 광고비 산출 이벤트 발행
         val advertisement =
             advertisementRepository.findById(advertisingReq.advertisementId).orElseThrow()
+
+        eventPublisher.publishEvent(
+            AdvertisementEvent(
+                advertisement,
+                EventType.CREATED
+            )
+        )
+
         return AdvertisingRes.fromEntity(
             advertisingExposureRepository.save(
                 advertisingReq.toEntity(advertisement)
@@ -73,18 +87,20 @@ class AdvertisingService(
             AdvertisingType.CHARGE
         )
     }
+    fun List<Advertising>.deductChargeForChargeType() {
+        val toDeactivate = mutableListOf<Advertising>()
 
-    private fun List<Advertising>.deductChargeForChargeType() {
         this.forEach { advertising ->
-            if (advertising.charge == null) {
-                deactivateAdvertising(advertising)
-            } else if (advertising.charge!! < BigDecimal(1000)) {
-                deactivateAdvertising(advertising)
+            if (advertising.charge == null || advertising.charge!! < BigDecimal(1000)) {
+                toDeactivate.add(advertising)
             } else {
                 advertising.charge = advertising.charge!! - BigDecimal(500)
             }
         }
-        advertisingExposureRepository.saveAll(this)
+
+        advertisingExposureRepository.saveAll(this.filterNot { toDeactivate.contains(it) })
+
+        toDeactivate.forEach { deactivateAdvertising(it) }
     }
 
     private fun deactivateAdvertising(advertising: Advertising) {
@@ -92,9 +108,17 @@ class AdvertisingService(
         val updatedAdvertisement = advertisement.withUpdatedIsAllowed(false)
         advertisementRepository.save(updatedAdvertisement)
         advertisingExposureRepository.delete(advertising)
+        eventPublisher.publishEvent(
+            AdvertisementEvent(
+                advertisement,
+                EventType.DELETED
+            )
+        )
     }
 }
 
+private fun Streamable<String>.parseLong(): Streamable<Long> =
+    this.map { it.toLong() }
 
 private fun validateAdvertising(advertisingReq: AdvertisingReq) {
     when (advertisingReq.advertisingType) {
