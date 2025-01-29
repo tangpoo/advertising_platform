@@ -7,6 +7,7 @@ import com.advertising.advertising_exposure.domain.AdvertisementDocument
 import com.advertising.advertising_exposure.domain.Advertising
 import com.advertising.advertising_exposure.domain.AdvertisingType
 import com.advertising.advertising_exposure.event.AdvertisementEvent
+import com.advertising.advertising_exposure.event.BillingEventPublisher
 import com.advertising.advertising_exposure.event.EventType
 import com.advertising.advertising_exposure.repository.AdvertisementRepository
 import com.advertising.advertising_exposure.repository.AdvertisingExposureRepository
@@ -50,11 +51,14 @@ class AdvertisingServiceTests {
     @Mock
     private lateinit var eventPublisher: ApplicationEventPublisher
 
+    @Mock
+    private lateinit var billingEventPublisher: BillingEventPublisher
+
 
     @Nested
     inner class PostAdvertisement {
         @Test
-        fun `Success post advertisement of charge type`() {
+        fun `should success when post advertisement of charge type`() {
             // Arrange
             val advertisingReq =
                 AdvertisingReq(1L, AdvertisingType.CHARGE, 100000L, LocalDateTime.now().plusDays(5))
@@ -89,6 +93,7 @@ class AdvertisingServiceTests {
                     EventType.CREATED
                 )
             )
+            verify(billingEventPublisher, times(1)).sendBillingEvent(argThat { true })
         }
 
         @Test
