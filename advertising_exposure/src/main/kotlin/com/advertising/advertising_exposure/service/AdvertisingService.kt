@@ -9,6 +9,7 @@ import com.advertising.advertising_exposure.domain.AdvertisementDocument
 import com.advertising.advertising_exposure.domain.Advertising
 import com.advertising.advertising_exposure.domain.AdvertisingType
 import com.advertising.advertising_exposure.event.AdvertisementEvent
+import com.advertising.advertising_exposure.event.BillingEventPublisher
 import com.advertising.advertising_exposure.event.EventType
 import com.advertising.advertising_exposure.repository.AdvertisementRepository
 import com.advertising.advertising_exposure.repository.AdvertisingExposureRepository
@@ -26,7 +27,8 @@ class AdvertisingService(
     private val advertisementRepository: AdvertisementRepository,
     private val advertisingExposureRepository: AdvertisingExposureRepository,
     private val advertisingSearchRepository: AdvertisementQueryRepository,
-    private val eventPublisher: ApplicationEventPublisher
+    private val eventPublisher: ApplicationEventPublisher,
+    private val billingEventPublisher: BillingEventPublisher
 ) {
     fun saveAdvertisementInfo(advertisementReq: AdvertisementReq): AdvertisementRes {
         val advertisingInfoEntity = advertisementRepository.save(advertisementReq.toEntity())
@@ -41,7 +43,6 @@ class AdvertisingService(
         size: Int
     ): List<AdvertisementRes> {
         // todo 클라이언트 관심사 외 이벤트로 분리
-        // todo 조회 후에 수수료 부족한 엔티티도 deactivate
         val pageable = PageRequest.of(page, size)
         val advertisements = advertisingSearchRepository.filterAndSortAdvertisingInfos(
             minOrderPrice,
@@ -60,7 +61,7 @@ class AdvertisingService(
     fun postAdvertisement(advertisingReq: AdvertisingReq): AdvertisingRes {
         validateAdvertising(advertisingReq)
 
-        // todo Advertisements 인덱싱 및 광고비 산출 이벤트 발행
+        // todo 광고비 산출 이벤트 발행
         val advertisement =
             advertisementRepository.findById(advertisingReq.advertisementId).orElseThrow()
 
@@ -71,9 +72,13 @@ class AdvertisingService(
             )
         )
 
+        val advertising = advertisingReq.toEntity(advertisement)
+
+        billingEventPublisher.sendBillingEvent(advertising)
+
         return AdvertisingRes.fromEntity(
             advertisingExposureRepository.save(
-                advertisingReq.toEntity(advertisement)
+                advertising
             )
         )
     }
