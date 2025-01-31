@@ -74,12 +74,14 @@ class AdvertisingService(
 
         val advertising = advertisingReq.toEntity(advertisement)
 
-        billingEventPublisher.sendBillingEvent(advertising)
+        val advertisingEntity = advertisingExposureRepository.save(
+            advertising
+        )
+
+        billingEventPublisher.sendBillingEvent(advertisingEntity)
 
         return AdvertisingRes.fromEntity(
-            advertisingExposureRepository.save(
-                advertising
-            )
+            advertisingEntity
         )
     }
 
