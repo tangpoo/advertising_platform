@@ -9,6 +9,9 @@ spring:
     url: jdbc:mysql://localhost:3306/advertising_platform
     username: root
     password: 1234
+  rabbitmq:
+    host: localhost
+    port: 5672
 
   jpa:
     hibernate:
