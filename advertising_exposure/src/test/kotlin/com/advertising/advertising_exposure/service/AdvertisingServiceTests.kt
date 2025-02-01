@@ -93,6 +93,7 @@ class AdvertisingServiceTests {
                     EventType.CREATED
                 )
             )
+            verify(billingEventPublisher, times(1)).sendImmediatePaymentEvent(argThat { true })
             verify(billingEventPublisher, times(1)).sendBillingEvent(argThat { true })
         }
 
