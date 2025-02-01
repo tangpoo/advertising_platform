@@ -8,6 +8,7 @@ import com.advertising.advertising_exposure.domain.Advertisement
 import com.advertising.advertising_exposure.domain.AdvertisementDocument
 import com.advertising.advertising_exposure.domain.Advertising
 import com.advertising.advertising_exposure.domain.AdvertisingType
+import com.advertising.advertising_exposure.domain.AdvertisingType.*
 import com.advertising.advertising_exposure.event.AdvertisementEvent
 import com.advertising.advertising_exposure.event.BillingEventPublisher
 import com.advertising.advertising_exposure.event.EventType
@@ -61,7 +62,6 @@ class AdvertisingService(
     fun postAdvertisement(advertisingReq: AdvertisingReq): AdvertisingRes {
         validateAdvertising(advertisingReq)
 
-        // todo 광고비 산출 이벤트 발행
         val advertisement =
             advertisementRepository.findById(advertisingReq.advertisementId).orElseThrow()
 
@@ -78,11 +78,20 @@ class AdvertisingService(
             advertising
         )
 
+        publishPaymentEventByType(advertisingEntity)
+
         billingEventPublisher.sendBillingEvent(advertisingEntity)
 
         return AdvertisingRes.fromEntity(
             advertisingEntity
         )
+    }
+
+    private fun publishPaymentEventByType(advertisingEntity: Advertising) {
+        when (advertisingEntity.advertisingType) {
+            CHARGE -> billingEventPublisher.sendImmediatePaymentEvent(advertisingEntity)
+            FLAT_RATE -> billingEventPublisher.sendScheduledPaymentEvent(advertisingEntity)
+        }
     }
 
     private fun Streamable<Long>.filterChargeTypeAdvertising(): List<Advertising> {
@@ -91,7 +100,7 @@ class AdvertisingService(
         if (ids.isEmpty()) return emptyList()
         return advertisingExposureRepository.findByAdvertisementIdInAndAdvertisingType(
             ids,
-            AdvertisingType.CHARGE
+            CHARGE
         )
     }
     fun List<Advertising>.deductChargeForChargeType() {
@@ -129,13 +138,13 @@ private fun Streamable<String>.parseLong(): Streamable<Long> =
 
 private fun validateAdvertising(advertisingReq: AdvertisingReq) {
     when (advertisingReq.advertisingType) {
-        AdvertisingType.FLAT_RATE -> {
+        FLAT_RATE -> {
             if (advertisingReq.charge != null) {
                 throw IllegalArgumentException("Charge must be null flat rate type advertising")
             }
         }
 
-        AdvertisingType.CHARGE -> {
+        CHARGE -> {
             val charge = advertisingReq.charge
                 ?: throw IllegalArgumentException("Charge can not be null for charge type advertising")
             if (charge < 500) {
