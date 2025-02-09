@@ -20,8 +20,7 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
-import org.mockito.Mockito.verify
-import org.mockito.Mockito.`when`
+import org.mockito.Mockito.*
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
@@ -107,7 +106,7 @@ class AdvertisingServiceTests {
             val result = assertThrows<IllegalArgumentException> {
                 advertisingService.postAdvertisement(advertisingReq)
             }
-            assertEquals("Charge can not be null for charge type advertising", result.message)
+            assertEquals("Charge can not be null for charge type advertising.", result.message)
         }
     }
 
@@ -242,11 +241,11 @@ class AdvertisingServiceTests {
 
             val advertisementDocumentList = createAdvertisementDocumentStreamable()
             val advertisingList = createAdvertisingList()
-            val filteredAdvertisingList =
-                advertisingList
-                    .filter { it.advertisingType == AdvertisingType.CHARGE }
-                    .filter { it.charge != null }
-                    .filter { it.charge!! < BigDecimal(1000) }
+
+            val (validAdvertisingList, deactivatedAdvertisingList) = advertisingList
+                .filter { it.advertisingType == AdvertisingType.CHARGE }
+                .partition { it.charge != null && it.charge!! >= BigDecimal(1000) }
+
 
             `when`(
                 advertisementSearchRepository.filterAndSortAdvertisingInfos(
@@ -263,8 +262,8 @@ class AdvertisingServiceTests {
                 )
             ).thenReturn(advertisingList)
             `when`(
-                advertisingExposureRepository.saveAll(filteredAdvertisingList)
-            ).thenReturn(filteredAdvertisingList)
+                advertisingExposureRepository.saveAll(anyList())
+            ).thenReturn(validAdvertisingList)
 
             // Act
             val result = advertisingService.filterAndSortAdvertisementInfos(
@@ -279,7 +278,7 @@ class AdvertisingServiceTests {
             assertEquals(result.size, 3)
             assertEquals(result.get(0).region, "seoul")
             assertEquals(result.get(1).region, "busan")
-            verify(eventPublisher, times(0)).publishEvent(any())
+            verify(eventPublisher, times(deactivatedAdvertisingList.size)).publishEvent(any())
         }
 
         @Test
