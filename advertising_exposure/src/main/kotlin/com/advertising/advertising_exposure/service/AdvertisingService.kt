@@ -7,8 +7,8 @@ import com.advertising.advertising_exposure.controller.dto.AdvertisingRes
 import com.advertising.advertising_exposure.domain.Advertisement
 import com.advertising.advertising_exposure.domain.AdvertisementDocument
 import com.advertising.advertising_exposure.domain.Advertising
-import com.advertising.advertising_exposure.domain.AdvertisingType
-import com.advertising.advertising_exposure.domain.AdvertisingType.*
+import com.advertising.advertising_exposure.domain.AdvertisingType.CHARGE
+import com.advertising.advertising_exposure.domain.AdvertisingType.FLAT_RATE
 import com.advertising.advertising_exposure.event.AdvertisementEvent
 import com.advertising.advertising_exposure.event.BillingEventPublisher
 import com.advertising.advertising_exposure.event.EventType
@@ -31,10 +31,8 @@ class AdvertisingService(
     private val eventPublisher: ApplicationEventPublisher,
     private val billingEventPublisher: BillingEventPublisher
 ) {
-    fun saveAdvertisementInfo(advertisementReq: AdvertisementReq): AdvertisementRes {
-        val advertisingInfoEntity = advertisementRepository.save(advertisementReq.toEntity())
-        return AdvertisementRes.fromEntity(advertisingInfoEntity)
-    }
+    fun saveAdvertisementInfo(advertisementReq: AdvertisementReq): AdvertisementRes =
+        advertisementRepository.save(advertisementReq.toEntity()).let { AdvertisementRes.fromEntity(it) }
 
     fun filterAndSortAdvertisementInfos(
         minOrderPrice: Int?,
@@ -42,119 +40,77 @@ class AdvertisingService(
         sortBy: String,
         page: Int,
         size: Int
-    ): List<AdvertisementRes> {
+    ): List<AdvertisementRes> =
         // todo 클라이언트 관심사 외 이벤트로 분리
-        val pageable = PageRequest.of(page, size)
-        val advertisements = advertisingSearchRepository.filterAndSortAdvertisingInfos(
+        advertisingSearchRepository.filterAndSortAdvertisingInfos(
             minOrderPrice,
             maxDeliveryFee,
             sortBy,
-            pageable
-        )
+            PageRequest.of(page, size)
+        ).let { advertisements ->
+            advertisements.map { it.id }
+                .parseLong()
+                .filterChargeTypeAdvertising()
+                .deductChargeForChargeType()
 
-        advertisements.map { it.id }
-            .parseLong()
-            .filterChargeTypeAdvertising()
-            .deductChargeForChargeType()
+            advertisements.toResponse().toList()
+        }
 
-        return advertisements.toResponse().toList()
-    }
-    fun postAdvertisement(advertisingReq: AdvertisingReq): AdvertisingRes {
-        validateAdvertising(advertisingReq)
+    fun postAdvertisement(advertisingReq: AdvertisingReq): AdvertisingRes =
+        advertisingReq.apply { validateAdvertising(this) }
+            .let { advertisementRepository.findById(it.advertisementId).orElseThrow() }
+            .also { eventPublisher.publishEvent(AdvertisementEvent(it, EventType.CREATED)) }
+            .let { advertisingReq.toEntity(it) }
+            .let { advertisingExposureRepository.save(it) }
+            .also {
+                publishPaymentEventByType(it)
+                billingEventPublisher.sendBillingEvent(it)
+            }
+            .let { AdvertisingRes.fromEntity(it) }
 
-        val advertisement =
-            advertisementRepository.findById(advertisingReq.advertisementId).orElseThrow()
-
-        eventPublisher.publishEvent(
-            AdvertisementEvent(
-                advertisement,
-                EventType.CREATED
-            )
-        )
-
-        val advertising = advertisingReq.toEntity(advertisement)
-
-        val advertisingEntity = advertisingExposureRepository.save(
-            advertising
-        )
-
-        publishPaymentEventByType(advertisingEntity)
-
-        billingEventPublisher.sendBillingEvent(advertisingEntity)
-
-        return AdvertisingRes.fromEntity(
-            advertisingEntity
-        )
-    }
-
-    private fun publishPaymentEventByType(advertisingEntity: Advertising) {
+    private fun publishPaymentEventByType(advertisingEntity: Advertising) =
         when (advertisingEntity.advertisingType) {
             CHARGE -> billingEventPublisher.sendImmediatePaymentEvent(advertisingEntity)
             FLAT_RATE -> billingEventPublisher.sendScheduledPaymentEvent(advertisingEntity)
         }
-    }
 
-    private fun Streamable<Long>.filterChargeTypeAdvertising(): List<Advertising> {
-        val ids = this.toList()
+    private fun Streamable<Long>.filterChargeTypeAdvertising(): List<Advertising> =
+        this.toList().takeIf { it.isNotEmpty() }?.let {
+            advertisingExposureRepository.findByAdvertisementIdInAndAdvertisingType(it, CHARGE)
+        } ?: emptyList()
 
-        if (ids.isEmpty()) return emptyList()
-        return advertisingExposureRepository.findByAdvertisementIdInAndAdvertisingType(
-            ids,
-            CHARGE
-        )
-    }
-    fun List<Advertising>.deductChargeForChargeType() {
-        val toDeactivate = mutableListOf<Advertising>()
-
-        this.forEach { advertising ->
-            if (advertising.charge == null || advertising.charge!! < BigDecimal(1000)) {
-                toDeactivate.add(advertising)
-            } else {
-                advertising.charge = advertising.charge!! - BigDecimal(500)
-            }
+    private fun List<Advertising>.deductChargeForChargeType() {
+        val (toDeactivate, toUpdate) = this.partition {
+            it.charge == null || it.charge!! < BigDecimal(
+                1000
+            )
         }
-
-        advertisingExposureRepository.saveAll(this.filterNot { toDeactivate.contains(it) })
-
-        toDeactivate.forEach { deactivateAdvertising(it) }
+        toUpdate.forEach { it.charge = it.charge!! - BigDecimal(500) }
+        advertisingExposureRepository.saveAll(toUpdate)
+        toDeactivate.forEach(::deactivateAdvertising)
     }
 
     private fun deactivateAdvertising(advertising: Advertising) {
-        val advertisement = advertising.advertisement
-        val updatedAdvertisement = advertisement.withUpdatedIsAllowed(false)
-        advertisementRepository.save(updatedAdvertisement)
+        advertisementRepository.save(advertising.advertisement.withUpdatedIsAllowed(false))
         advertisingExposureRepository.delete(advertising)
-        eventPublisher.publishEvent(
-            AdvertisementEvent(
-                advertisement,
-                EventType.DELETED
-            )
-        )
+        eventPublisher.publishEvent(AdvertisementEvent(advertising.advertisement, EventType.DELETED))
     }
 }
 
 private fun Streamable<String>.parseLong(): Streamable<Long> =
-    this.map { it.toLong() }
+    map(String::toLong)
 
 private fun validateAdvertising(advertisingReq: AdvertisingReq) {
     when (advertisingReq.advertisingType) {
-        FLAT_RATE -> {
-            if (advertisingReq.charge != null) {
-                throw IllegalArgumentException("Charge must be null flat rate type advertising")
-            }
-        }
-
+        FLAT_RATE -> require(advertisingReq.charge == null) { "Charge must be null for flat rate type advertising." }
         CHARGE -> {
-            val charge = advertisingReq.charge
-                ?: throw IllegalArgumentException("Charge can not be null for charge type advertising")
-            if (charge < 500) {
-                throw IllegalArgumentException("Charge must be greater than 500 for charge type advertising")
-            }
+            require(advertisingReq.charge != null) { "Charge can not be null for charge type advertising." }
+            require(advertisingReq.charge >= 500) { "Charge must be greater than 500 for charge type advertising." }
         }
     }
 }
 
-private fun Streamable<*>.toResponse(): Streamable<AdvertisementRes> = this.map {
+private fun Streamable<*>.toResponse(): Streamable<AdvertisementRes> = map {
     when (it) {
         is Advertisement -> AdvertisementRes.fromEntity(it)
         is AdvertisementDocument -> AdvertisementRes.fromDocument(it)
