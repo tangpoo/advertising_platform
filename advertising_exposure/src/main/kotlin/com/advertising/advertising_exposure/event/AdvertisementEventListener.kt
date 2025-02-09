@@ -23,7 +23,5 @@ class AdvertisementEventListener(
                 elasticsearchOperations.delete(advertisement.id.toString(), AdvertisementDocument::class.java)
             }
         }
-
-        // todo 인덱싱은 광고 게시가 시작된 경우로 한정
     }
 }
