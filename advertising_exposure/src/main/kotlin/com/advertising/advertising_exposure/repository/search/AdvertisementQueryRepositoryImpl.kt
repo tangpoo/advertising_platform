@@ -23,31 +23,21 @@ class AdvertisementQueryRepositoryImpl(
         pageable: Pageable
     ): Streamable<AdvertisementDocument> {
 
-        val criteria = Criteria()
-
-        minOrderPrice?.let {
-            criteria.and(Criteria("minOrderPrice").greaterThanEqual(it))
+        val criteria = Criteria().apply {
+            minOrderPrice?.let { and(Criteria("minOrderPrice").greaterThanEqual(it)) }
+            maxDeliveryFee?.let { and(Criteria("deliveryFee").lessThanEqual(it)) }
         }
 
-        maxDeliveryFee?.let {
-            criteria.and(Criteria("deliveryFee").lessThanEqual(it))
-        }
-
-        val sortField = when (sortBy) {
-            "rating" -> "rating"
-            else -> "createdAt"
-        }
-
+        val sortField = if (sortBy == "rating") "rating" else "createdAt"
         val sortOrder = by(Order.desc(sortField))
 
-        val criteriaQuery: Query = CriteriaQuery.builder(criteria)
+        val criteriaQuery = CriteriaQuery.builder(criteria)
             .withSort(sortOrder)
             .withPageable(pageable)
             .build()
 
-        val searchHits: SearchHits<AdvertisementDocument> =
-            elasticsearchOperations.search(criteriaQuery, AdvertisementDocument::class.java)
-
-        return searchHits.map { it.content }
+        return elasticsearchOperations
+            .search(criteriaQuery, AdvertisementDocument::class.java)
+            .map { it.content }
     }
 }

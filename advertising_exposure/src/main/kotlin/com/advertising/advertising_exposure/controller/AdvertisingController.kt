@@ -12,9 +12,8 @@ import org.springframework.web.bind.annotation.*
 class AdvertisingController(private val advertisingService: AdvertisingService) {
 
     @PostMapping
-    fun saveAdvertisingInfo(@RequestBody advertisementReq: AdvertisementReq): AdvertisementRes {
-        return advertisingService.saveAdvertisementInfo(advertisementReq)
-    }
+    fun saveAdvertisingInfo(@RequestBody advertisementReq: AdvertisementReq): AdvertisementRes =
+        advertisingService.saveAdvertisementInfo(advertisementReq)
 
     @GetMapping
     fun filterAndSortAdvertisingInfos(
@@ -23,20 +22,16 @@ class AdvertisingController(private val advertisingService: AdvertisingService) 
         @RequestParam(defaultValue = "createdAt") sortBy: String,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int
-    ): List<AdvertisementRes> {
-        return advertisingService.filterAndSortAdvertisementInfos(
-            minOrderPrice,
-            maxDeliveryFee,
-            sortBy,
-            page,
-            size
-        )
-    }
+    ): List<AdvertisementRes> = advertisingService.filterAndSortAdvertisementInfos(
+        minOrderPrice,
+        maxDeliveryFee,
+        sortBy,
+        page,
+        size
+    )
 
     @PostMapping("/posting")
     fun postAdvertisements(
         @RequestBody advertisingReq: AdvertisingReq
-    ): AdvertisingRes {
-        return advertisingService.postAdvertisement(advertisingReq)
-    }
+    ): AdvertisingRes = advertisingService.postAdvertisement(advertisingReq)
 }
