@@ -1,9 +1,9 @@
 package com.advertising.advertising_exposure.domain
 
-import com.advertising.advertising_exposure.event.AdvertisementEvent
-import com.advertising.advertising_exposure.event.ApplicationContextProvider
-import com.advertising.advertising_exposure.event.EventType
-import jakarta.persistence.*
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
 import org.hibernate.annotations.CreationTimestamp
 import java.time.LocalDateTime
 
