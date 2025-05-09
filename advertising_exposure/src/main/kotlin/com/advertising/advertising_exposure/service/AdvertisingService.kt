@@ -7,8 +7,8 @@ import com.advertising.advertising_exposure.controller.dto.AdvertisingRes
 import com.advertising.advertising_exposure.domain.Advertisement
 import com.advertising.advertising_exposure.domain.AdvertisementDocument
 import com.advertising.advertising_exposure.domain.Advertising
-import com.advertising.advertising_exposure.domain.AdvertisingType.CHARGE
-import com.advertising.advertising_exposure.domain.AdvertisingType.FLAT_RATE
+import com.advertising.advertising_exposure.domain.AdvertisingBillingType.CHARGE
+import com.advertising.advertising_exposure.domain.AdvertisingBillingType.FLAT_RATE
 import com.advertising.advertising_exposure.event.AdvertisementEvent
 import com.advertising.advertising_exposure.event.BillingEventPublisher
 import com.advertising.advertising_exposure.event.EventType
@@ -69,7 +69,7 @@ class AdvertisingService(
             .let { AdvertisingRes.fromEntity(it) }
 
     private fun publishPaymentEventByType(advertisingEntity: Advertising) =
-        when (advertisingEntity.advertisingType) {
+        when (advertisingEntity.advertisingBillingType) {
             CHARGE -> billingEventPublisher.sendImmediatePaymentEvent(advertisingEntity)
             FLAT_RATE -> billingEventPublisher.sendScheduledPaymentEvent(advertisingEntity)
         }
@@ -101,7 +101,7 @@ private fun Streamable<String>.parseLong(): Streamable<Long> =
     map(String::toLong)
 
 private fun validateAdvertising(advertisingReq: AdvertisingReq) {
-    when (advertisingReq.advertisingType) {
+    when (advertisingReq.advertisingBillingType) {
         FLAT_RATE -> require(advertisingReq.charge == null) { "Charge must be null for flat rate type advertising." }
         CHARGE -> {
             require(advertisingReq.charge != null) { "Charge can not be null for charge type advertising." }

@@ -1,6 +1,6 @@
 package com.advertising.advertising_exposure.domain
 
-enum class AdvertisingType(
+enum class AdvertisingBillingType(
     private val paymentMethod: String
 ) {
     CHARGE("수수료형"),

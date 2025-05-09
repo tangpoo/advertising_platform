@@ -2,10 +2,7 @@ package com.advertising.advertising_exposure.service
 
 import com.advertising.advertising_exposure.controller.dto.AdvertisementRes
 import com.advertising.advertising_exposure.controller.dto.AdvertisingReq
-import com.advertising.advertising_exposure.domain.Advertisement
-import com.advertising.advertising_exposure.domain.AdvertisementDocument
-import com.advertising.advertising_exposure.domain.Advertising
-import com.advertising.advertising_exposure.domain.AdvertisingType
+import com.advertising.advertising_exposure.domain.*
 import com.advertising.advertising_exposure.event.AdvertisementEvent
 import com.advertising.advertising_exposure.event.BillingEventPublisher
 import com.advertising.advertising_exposure.event.EventType
@@ -60,14 +57,15 @@ class AdvertisingServiceTests {
         fun `should success when post advertisement of charge type`() {
             // Arrange
             val advertisingReq =
-                AdvertisingReq(1L, AdvertisingType.CHARGE, 100000L, LocalDateTime.now().plusDays(5))
+                AdvertisingReq(1L, AdvertisingBillingType.CHARGE, 100000L, LocalDateTime.now().plusDays(5))
             val advertisement = createAdvertisement()
 
             TestUtils.setId(advertisement, "id", 1L)
 
             val advertising = createAdvertising(
                 advertisement,
-                advertisingReq.advertisingType,
+                advertisingReq.advertisingBillingType,
+                null,
                 advertisingReq.charge?.toBigDecimal(),
                 advertisingReq.startAt
             )
@@ -84,7 +82,7 @@ class AdvertisingServiceTests {
             val result = advertisingService.postAdvertisement(advertisingReq)
 
             // Assert
-            assertEquals(advertisingReq.advertisingType, result.advertisingType)
+            assertEquals(advertisingReq.advertisingBillingType, result.advertisingBillingType)
             assertEquals(advertisingReq.charge?.toBigDecimal(), result.charge)
             verify(eventPublisher, times(1)).publishEvent(
                 AdvertisementEvent(
@@ -100,7 +98,7 @@ class AdvertisingServiceTests {
         fun `should fail when charge is null for charge type advertising`() {
             // Arrange
             val advertisingReq =
-                AdvertisingReq(1L, AdvertisingType.CHARGE, null, LocalDateTime.now().plusDays(5))
+                AdvertisingReq(1L, AdvertisingBillingType.CHARGE, null, LocalDateTime.now().plusDays(5))
 
             // Act + Assert
             val result = assertThrows<IllegalArgumentException> {
@@ -125,7 +123,8 @@ class AdvertisingServiceTests {
             val advertisementDocumentList = createAdvertisementDocumentStreamable()
             val advertising = createAdvertising(
                 createAdvertisement(),
-                AdvertisingType.CHARGE,
+                AdvertisingBillingType.CHARGE,
+                AdvertisingStatus.ACTIVE,
                 null,
                 LocalDateTime.now()
             )
@@ -145,7 +144,7 @@ class AdvertisingServiceTests {
             `when`(
                 advertisingExposureRepository.findByAdvertisementIdInAndAdvertisingType(
                     any(),
-                    eq(AdvertisingType.CHARGE)
+                    eq(AdvertisingBillingType.CHARGE)
                 )
             ).thenReturn(deActivateAdvertisingList)
 
@@ -183,7 +182,8 @@ class AdvertisingServiceTests {
             val advertisementDocumentList = createAdvertisementDocumentStreamable()
             val advertising = createAdvertising(
                 createAdvertisement(),
-                AdvertisingType.CHARGE,
+                AdvertisingBillingType.CHARGE,
+                AdvertisingStatus.ACTIVE,
                 BigDecimal(999),
                 LocalDateTime.now()
             )
@@ -204,7 +204,7 @@ class AdvertisingServiceTests {
             `when`(
                 advertisingExposureRepository.findByAdvertisementIdInAndAdvertisingType(
                     any(),
-                    eq(AdvertisingType.CHARGE)
+                    eq(AdvertisingBillingType.CHARGE)
                 )
             ).thenReturn(deActivateAdvertisingList)
 
@@ -243,7 +243,7 @@ class AdvertisingServiceTests {
             val advertisingList = createAdvertisingList()
 
             val (validAdvertisingList, deactivatedAdvertisingList) = advertisingList
-                .filter { it.advertisingType == AdvertisingType.CHARGE }
+                .filter { it.advertisingBillingType == AdvertisingBillingType.CHARGE }
                 .partition { it.charge != null && it.charge!! >= BigDecimal(1000) }
 
 
@@ -258,7 +258,7 @@ class AdvertisingServiceTests {
             `when`(
                 advertisingExposureRepository.findByAdvertisementIdInAndAdvertisingType(
                     any(),
-                    eq(AdvertisingType.CHARGE)
+                    eq(AdvertisingBillingType.CHARGE)
                 )
             ).thenReturn(advertisingList)
             `when`(
@@ -304,7 +304,7 @@ class AdvertisingServiceTests {
             `when`(
                 advertisingExposureRepository.findByAdvertisementIdInAndAdvertisingType(
                     any(),
-                    eq(AdvertisingType.CHARGE)
+                    eq(AdvertisingBillingType.CHARGE)
                 )
             ).thenReturn(emptyList())
             `when`(
@@ -466,12 +466,14 @@ private fun createAdvertisementDocumentStreamable() = Streamable.of(
 
 private fun createAdvertising(
     advertisement: Advertisement,
-    advertisingType: AdvertisingType,
+    advertisingBillingType: AdvertisingBillingType,
+    advertisingStatus: AdvertisingStatus?,
     charge: BigDecimal?,
     startAt: LocalDateTime
 ) = Advertising(
     advertisement,
-    advertisingType,
+    advertisingBillingType,
+    advertisingStatus,
     charge,
     startAt
 )
@@ -479,26 +481,30 @@ private fun createAdvertising(
 private fun createAdvertisingList() = listOf(
     createAdvertising(
         createAdvertisement(),
-        AdvertisingType.CHARGE,
+        AdvertisingBillingType.CHARGE,
+        null,
         BigDecimal(10000),
         LocalDateTime.now()
     ),
     createAdvertising(
         createAdvertisement(),
-        AdvertisingType.CHARGE,
+        AdvertisingBillingType.CHARGE,
+        null,
         BigDecimal(50000),
         LocalDateTime.now()
     ),
     createAdvertising(
         createAdvertisement(),
-        AdvertisingType.CHARGE,
+        AdvertisingBillingType.CHARGE,
+        null,
         BigDecimal(100000),
         LocalDateTime.now()
     ),
-    createAdvertising(createAdvertisement(), AdvertisingType.FLAT_RATE, null, LocalDateTime.now()),
+    createAdvertising(createAdvertisement(), AdvertisingBillingType.FLAT_RATE, null, null, LocalDateTime.now()),
     createAdvertising(
         createAdvertisement(),
-        AdvertisingType.FLAT_RATE,
+        AdvertisingBillingType.FLAT_RATE,
+        null,
         BigDecimal(100000),
         LocalDateTime.now()
     )
