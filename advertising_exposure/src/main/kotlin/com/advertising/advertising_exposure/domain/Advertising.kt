@@ -12,9 +12,9 @@ class Advertising private constructor(
     @JoinColumn(name = "advertising_info_id")
     var advertisement: Advertisement,
     val advertisingBillingType: AdvertisingBillingType,
-    val advertisingStatus: AdvertisingStatus?,
+    var advertisingStatus: AdvertisingStatus?,
     var charge: BigDecimal?,
-    val startedAt: LocalDateTime,
+    val startAt: LocalDateTime,
     val endedAt: LocalDateTime,
     val paymentDate: LocalDateTime
 ) {
@@ -26,6 +26,10 @@ class Advertising private constructor(
     }
 
     override fun hashCode(): Int = id.hashCode()
+
+    fun activate() {
+        advertisingStatus = AdvertisingStatus.ACTIVE
+    }
 
     companion object {
         operator fun invoke(
@@ -41,7 +45,7 @@ class Advertising private constructor(
                 advertisingBillingType = advertisingBillingType,
                 advertisingStatus = advertisingStatus,
                 charge = charge,
-                startedAt = startedAt,
+                startAt = startedAt,
                 endedAt = startedAt.plusMonths(1),
                 paymentDate = LocalDateTime.now()
             )

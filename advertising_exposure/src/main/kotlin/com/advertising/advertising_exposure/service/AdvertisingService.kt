@@ -76,7 +76,7 @@ class AdvertisingService(
 
     private fun Streamable<Long>.filterChargeTypeAdvertising(): List<Advertising> =
         this.toList().takeIf { it.isNotEmpty() }?.let {
-            advertisingExposureRepository.findByAdvertisementIdInAndAdvertisingType(it, CHARGE)
+            advertisingExposureRepository.findByAdvertisementIdInAndAdvertisingBillingType(it, CHARGE)
         } ?: emptyList()
 
     private fun List<Advertising>.deductChargeForChargeType() {

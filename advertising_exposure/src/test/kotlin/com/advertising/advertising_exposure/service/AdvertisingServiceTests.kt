@@ -142,7 +142,7 @@ class AdvertisingServiceTests {
             ).thenReturn(advertisementDocumentList)
 
             `when`(
-                advertisingExposureRepository.findByAdvertisementIdInAndAdvertisingType(
+                advertisingExposureRepository.findByAdvertisementIdInAndAdvertisingBillingType(
                     any(),
                     eq(AdvertisingBillingType.CHARGE)
                 )
@@ -202,7 +202,7 @@ class AdvertisingServiceTests {
             ).thenReturn(advertisementDocumentList)
 
             `when`(
-                advertisingExposureRepository.findByAdvertisementIdInAndAdvertisingType(
+                advertisingExposureRepository.findByAdvertisementIdInAndAdvertisingBillingType(
                     any(),
                     eq(AdvertisingBillingType.CHARGE)
                 )
@@ -256,7 +256,7 @@ class AdvertisingServiceTests {
                 )
             ).thenReturn(advertisementDocumentList)
             `when`(
-                advertisingExposureRepository.findByAdvertisementIdInAndAdvertisingType(
+                advertisingExposureRepository.findByAdvertisementIdInAndAdvertisingBillingType(
                     any(),
                     eq(AdvertisingBillingType.CHARGE)
                 )
@@ -302,7 +302,7 @@ class AdvertisingServiceTests {
                 )
             ).thenReturn(advertisementDocumentList)
             `when`(
-                advertisingExposureRepository.findByAdvertisementIdInAndAdvertisingType(
+                advertisingExposureRepository.findByAdvertisementIdInAndAdvertisingBillingType(
                     any(),
                     eq(AdvertisingBillingType.CHARGE)
                 )

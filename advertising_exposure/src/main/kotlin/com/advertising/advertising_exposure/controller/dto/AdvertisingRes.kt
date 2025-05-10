@@ -19,7 +19,7 @@ data class AdvertisingRes(
                 advertising.id!!,
                 advertising.advertisingBillingType,
                 advertising.charge,
-                advertising.startedAt,
+                advertising.startAt,
                 advertising.endedAt,
                 advertising.paymentDate
             )
