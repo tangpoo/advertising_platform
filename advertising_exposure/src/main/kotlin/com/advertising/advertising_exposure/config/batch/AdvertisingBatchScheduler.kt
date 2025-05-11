@@ -12,7 +12,7 @@ class AdvertisingBatchScheduler(
     private val advertisingActivationJob: Job
 ) {
 
-    @Scheduled(fixedRate = 10_000) // 10초마다 실행
+    @Scheduled(cron = "0 * * * * ?")
     fun runAdvertisingActivationJob() {
         val jobParameter = JobParametersBuilder()
             .addLong("timestamp", System.currentTimeMillis())
