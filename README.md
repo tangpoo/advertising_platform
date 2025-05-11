@@ -12,7 +12,7 @@
 
 ## 주요 기술
 - 언어 : Kotlin 1.9
-- 프레임워크 : Spring Framework (Spring Boot)
+- 프레임워크 : Spring Framework (Spring Boot, Spring Batch)
 - 빌드 도구 : Gradle
 - 배포 및 운영 :
     - 서버 : AWS EC2, Docker
