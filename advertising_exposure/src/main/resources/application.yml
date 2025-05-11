@@ -26,6 +26,9 @@ spring:
     elasticsearch:
       repositories:
         enabled: true
+  batch:
+    jdbc:
+      initialize-schema: always
 
 es:
   host: localhost
