@@ -31,6 +31,10 @@ class Advertising private constructor(
         advertisingStatus = AdvertisingStatus.ACTIVE
     }
 
+    fun deactivate() {
+        advertisingStatus = AdvertisingStatus.FINISHED
+    }
+
     companion object {
         operator fun invoke(
             advertisement: Advertisement,

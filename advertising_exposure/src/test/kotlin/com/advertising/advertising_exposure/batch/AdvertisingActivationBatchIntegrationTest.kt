@@ -1,5 +1,6 @@
 package com.advertising.advertising_exposure.batch
 
+import com.advertising.advertising_exposure.batch.config.ActivationBatchTestConfig
 import com.advertising.advertising_exposure.domain.Advertisement
 import com.advertising.advertising_exposure.domain.Advertising
 import com.advertising.advertising_exposure.domain.AdvertisingBillingType
@@ -19,8 +20,8 @@ import java.time.LocalDateTime
     "spring.batch.job.enabled=false",
     "spring.batch.jdbc.initialize-schema=always"
 ])
-@Import(BatchTestConfig::class)
-class AdvertisingBatchIntegrationTest {
+@Import(ActivationBatchTestConfig::class)
+class AdvertisingActivationBatchIntegrationTest {
 
     @Autowired
     lateinit var jobLauncherTestUtils: JobLauncherTestUtils
@@ -29,7 +30,7 @@ class AdvertisingBatchIntegrationTest {
     lateinit var advertisingExposureRepository: AdvertisingExposureRepository
 
     @Test
-    fun `전체 Job 실행 - WAITING 광고가 ACTIVE로 전환된다`() {
+    fun `예약 광고 활성화 Job - WAITING 광고가 ACTIVE로 전환된다`() {
         // given
         val ad = advertisingExposureRepository.save(
             Advertising(

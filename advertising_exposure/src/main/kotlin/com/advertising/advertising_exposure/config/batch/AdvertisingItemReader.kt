@@ -13,19 +13,35 @@ import org.springframework.data.domain.Sort
 import java.time.LocalDateTime
 
 @Configuration
-class AdvertisingItemReaderConfig {
+class AdvertisingItemReader {
 
     @Bean
     @StepScope
-    fun advertisingItemReader(
+    fun advertisingActivationItemReader(
         advertisingRepository: AdvertisingExposureRepository,
         @Value("#{T(java.time.LocalDateTime).now()}") now: LocalDateTime
     ): RepositoryItemReader<Advertising> {
         return RepositoryItemReaderBuilder<Advertising>()
-            .name("advertisingItemReader")
+            .name("advertisingActivationItemReader")
             .repository(advertisingRepository)
             .methodName("findByAdvertisingStatusAndStartAtLessThanEqual")
             .arguments(listOf(AdvertisingStatus.WAITING, now))
+            .pageSize(100)
+            .sorts(mapOf("id" to Sort.Direction.ASC))
+            .build()
+    }
+
+    @Bean
+    @StepScope
+    fun advertisingDeactivationItemReader(
+        advertisingRepository: AdvertisingExposureRepository,
+        @Value("#{T(java.time.LocalDateTime).now()}") now: LocalDateTime
+    ): RepositoryItemReader<Advertising> {
+        return RepositoryItemReaderBuilder<Advertising>()
+            .name("advertisingDeactivationItemReader")
+            .repository(advertisingRepository)
+            .methodName("findByAdvertisingStatusAndEndedAtLessThanEqual")
+            .arguments(listOf(AdvertisingStatus.ACTIVE, now))
             .pageSize(100)
             .sorts(mapOf("id" to Sort.Direction.ASC))
             .build()
