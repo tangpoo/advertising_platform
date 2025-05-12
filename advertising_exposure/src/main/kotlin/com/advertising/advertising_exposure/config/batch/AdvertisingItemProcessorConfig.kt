@@ -9,9 +9,16 @@ import org.springframework.context.annotation.Configuration
 class AdvertisingItemProcessorConfig {
 
     @Bean
-    fun advertisingItemProcessor(): ItemProcessor<Advertising, Advertising> =
+    fun advertisingActivationItemProcessor(): ItemProcessor<Advertising, Advertising> =
         ItemProcessor { advertising ->
             advertising.activate()
+            advertising
+        }
+
+    @Bean
+    fun advertisingDeactivationItemProcessor(): ItemProcessor<Advertising, Advertising> =
+        ItemProcessor { advertising ->
+            advertising.deactivate()
             advertising
         }
 }

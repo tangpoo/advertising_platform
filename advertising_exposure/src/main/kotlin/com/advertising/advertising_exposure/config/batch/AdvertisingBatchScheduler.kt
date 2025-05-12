@@ -9,7 +9,8 @@ import org.springframework.stereotype.Component
 @Component
 class AdvertisingBatchScheduler(
     private val jobLauncher: JobLauncher,
-    private val advertisingActivationJob: Job
+    private val advertisingActivationJob: Job,
+    private val advertisingDeactivationJob: Job
 ) {
 
     @Scheduled(cron = "0 * * * * ?")
@@ -19,5 +20,14 @@ class AdvertisingBatchScheduler(
             .toJobParameters()
 
         jobLauncher.run(advertisingActivationJob, jobParameter)
+    }
+
+    @Scheduled(cron = "0 * * * * ?")
+    fun runAdvertisingDeactivationJob() {
+        val jobParameter = JobParametersBuilder()
+            .addLong("timestamp", System.currentTimeMillis())
+            .toJobParameters()
+
+        jobLauncher.run(advertisingDeactivationJob, jobParameter)
     }
 }

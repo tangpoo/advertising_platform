@@ -21,4 +21,10 @@ interface AdvertisingExposureRepository : JpaRepository<Advertising, Long> {
         now: LocalDateTime,
         pageable: Pageable
     ): Page<Advertising>
+
+    fun findByAdvertisingStatusAndEndedAtLessThanEqual(
+        status: AdvertisingStatus,
+        now: LocalDateTime,
+        pageable: Pageable
+    ): Page<Advertising>
 }

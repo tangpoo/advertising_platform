@@ -14,9 +14,15 @@ class AdvertisingItemWriterConfig(
 ) {
 
     @Bean
-    fun advertisingItemWriter(): ItemWriter<Advertising> =
+    fun advertisingActivationItemWriter(): ItemWriter<Advertising> =
         ItemWriter { items ->
             advertisingExposureRepository.saveAll(items)
             items.forEach { advertisingEventPublisher.sendBillingEvent(it) }
+        }
+
+    @Bean
+    fun advertisingDeactivationItemWriter(): ItemWriter<Advertising> =
+        ItemWriter { items ->
+            advertisingExposureRepository.saveAll(items)
         }
 }

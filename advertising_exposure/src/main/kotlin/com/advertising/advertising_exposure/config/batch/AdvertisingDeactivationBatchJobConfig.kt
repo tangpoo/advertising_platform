@@ -9,22 +9,23 @@ import org.springframework.batch.core.step.builder.StepBuilder
 import org.springframework.batch.item.ItemProcessor
 import org.springframework.batch.item.ItemReader
 import org.springframework.batch.item.ItemWriter
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.transaction.PlatformTransactionManager
 
 @Configuration
-class AdvertisingBatchJobConfig(
+class AdvertisingDeactivationBatchJobConfig(
     private val jobRepository: JobRepository,
     private val transactionManager: PlatformTransactionManager,
-    private val advertisingItemReader: ItemReader<Advertising>,
-    private val advertisingItemProcessor: ItemProcessor<Advertising, Advertising>,
-    private val advertisingItemWriter: ItemWriter<Advertising>
+    @Qualifier("advertisingDeactivationItemReader") private val advertisingItemReader: ItemReader<Advertising>,
+    @Qualifier("advertisingDeactivationItemProcessor") private val advertisingItemProcessor: ItemProcessor<Advertising, Advertising>,
+    @Qualifier("advertisingDeactivationItemWriter") private val advertisingItemWriter: ItemWriter<Advertising>
 ) {
 
     @Bean
-    fun advertisingActivationStep(): Step {
-        return StepBuilder("advertisingActivationStep", jobRepository)
+    fun advertisingDeactivationStep(): Step {
+        return StepBuilder("advertisingDeactivationStep", jobRepository)
             .chunk<Advertising, Advertising>(100, transactionManager)
             .reader(advertisingItemReader)
             .processor(advertisingItemProcessor)
@@ -33,9 +34,9 @@ class AdvertisingBatchJobConfig(
     }
 
     @Bean
-    fun advertisingActivationJob(): Job {
-        return JobBuilder("advertisingActivationJob", jobRepository)
-            .start(advertisingActivationStep())
+    fun advertisingDeactivationJob(): Job {
+        return JobBuilder("advertisingDeactivationJob", jobRepository)
+            .start(advertisingDeactivationStep())
             .build()
     }
 }
